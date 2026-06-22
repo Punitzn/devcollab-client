@@ -17,7 +17,7 @@ export default function Register() {
     setLoading(true)
     try {
       const { data } = await api.post('/auth/register', form)
-      login(data.user)
+      login(data.user, data.token)
       navigate('/')
     } catch (err) {
       setError(

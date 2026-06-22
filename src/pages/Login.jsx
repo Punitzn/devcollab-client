@@ -24,7 +24,7 @@ export default function Login() {
     setLoading(true)
     try {
       const { data } = await api.post('/auth/login', form)
-      login(data.user)
+      login(data.user, data.token)
       navigate('/')
     } catch (err) {
       setError(

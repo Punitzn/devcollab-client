@@ -7,15 +7,23 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true) // true while checking session
 
-  // On app mount: check if the HTTP-only cookie is valid by calling /me
-  // This restores session across page refreshes without touching localStorage
+  // On app mount: check for OAuth token in URL, then verify session
   useEffect(() => {
     const checkSession = async () => {
+      // Read token from URL after OAuth redirect (e.g. /?token=xxx)
+      const params = new URLSearchParams(window.location.search)
+      const oauthToken = params.get('token')
+      if (oauthToken) {
+        localStorage.setItem('token', oauthToken)
+        // Clean the token from URL without triggering a reload
+        window.history.replaceState({}, '', window.location.pathname)
+      }
+
       try {
         const { data } = await api.get('/auth/me')
         setUser(data.user)
       } catch {
-        // Cookie missing or expired — user is not logged in
+        // Token missing or expired — user is not logged in
         setUser(null)
       } finally {
         setLoading(false)
@@ -24,18 +32,20 @@ export const AuthProvider = ({ children }) => {
     checkSession()
   }, [])
 
-  // Called after local login/register — backend already set the cookie
-  const login = (userData) => {
+  // Called after local login/register — stores token in localStorage for Bearer auth
+  const login = (userData, token) => {
+    if (token) localStorage.setItem('token', token)
     setUser(userData)
   }
 
-  // Called on logout — backend clears the cookie
+  // Called on logout — clears token from localStorage
   const logout = async () => {
     try {
       await api.post('/auth/logout')
     } catch {
       // ignore errors
     }
+    localStorage.removeItem('token')
     setUser(null)
   }
 
