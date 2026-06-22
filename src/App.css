@@ -591,7 +591,7 @@
 
 /* Create Snippet */
 .create-page {
-  max-width: 860px;
+  max-width: 1180px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
   animation: fadeIn 0.3s ease;
@@ -603,50 +603,33 @@
   border-bottom: 1px solid var(--border);
 }
 
-.create-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
+/* Two Column Snippet Creator Layout */
+.create-form-two-col {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
 }
 
-.create-form textarea.input {
-  resize: vertical;
-  min-height: 240px;
-  font-family: var(--font-mono);
-  font-size: 0.875rem;
-  line-height: 1.6;
-}
-
-.create-form select.input {
-  appearance: none;
-  cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%238b92a9'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd' /%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  background-size: 1.25rem;
-  padding-right: 2.5rem;
+@media (min-width: 900px) {
+  .create-form-two-col {
+    grid-template-columns: 1.5fr 1fr;
+    align-items: stretch;
+  }
+  .create-col-left {
+    display: flex;
+    flex-direction: column;
+  }
+  .create-col-right {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
 }
 
 .form-hint {
   font-size: 0.8rem;
   color: var(--text-muted);
   margin-top: 0.25rem;
-}
-
-/* Create Snippet Form Grid and Tags */
-.create-fields-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
-}
-
-@media (min-width: 640px) {
-  .create-fields-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .grid-col-span-2 {
-    grid-column: span 2;
-  }
 }
 
 .tags-input-container {
