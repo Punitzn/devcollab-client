@@ -412,6 +412,7 @@
 /* Code Block */
 .code-block-wrapper {
   position: relative;
+  width: 100%;
   margin-bottom: 2rem;
   border-radius: var(--radius-lg);
   overflow: hidden;

@@ -525,7 +525,7 @@ export default function SnippetDetail() {
             {copied ? '✓ Copied!' : 'Copy'}
           </button>
         </div>
-        <div style={{ background: editorTheme === 'vs-dark' ? '#1e1e1e' : '#fff' }}>
+        <div style={{ background: editorTheme === 'vs-dark' ? '#1e1e1e' : '#fff', width: '100%' }}>
           <Editor
             height="400px"
             language={editorLanguage}
