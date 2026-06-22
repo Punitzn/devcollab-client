@@ -29,6 +29,17 @@ export default function Navbar() {
           Dev<span className='brand-accent'>Collab</span>
         </Link>
 
+        {/* Search Hint Button */}
+        <div
+          className='navbar-search-hint'
+          onClick={() => window.dispatchEvent(new Event('toggle-command-palette'))}
+          title='Search snippets, users, or commands (⌘K)'
+        >
+          <i className='fa-solid fa-magnifying-glass'></i>
+          <span>Search...</span>
+          <kbd>⌘K</kbd>
+        </div>
+
         <div className='navbar-links'>
           {/* Theme Toggle Button */}
           <button

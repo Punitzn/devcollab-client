@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import './App.css'
 import { useAuth } from './context/AuthContext.jsx'
 import Navbar from './components/Navbar.jsx'
+import CommandPalette from './components/CommandPalette.jsx'
 import Home from './pages/Home.jsx'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
@@ -45,6 +46,7 @@ export default function App() {
   return (
     <>
       <Navbar />
+      <CommandPalette />
       <Routes>
         {/* Public routes */}
         <Route path='/' element={<RequireCompleteProfile><Home /></RequireCompleteProfile>} />

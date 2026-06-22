@@ -37,6 +37,31 @@ export default function SnippetDetail() {
     fetchSnippet()
   }, [id])
 
+  useEffect(() => {
+    const onStarted = () => {
+      setAiLoading(true)
+      setAiError('')
+    }
+    const onCompleted = (e) => {
+      setAiReview(e.detail)
+      setAiLoading(false)
+    }
+    const onFailed = (e) => {
+      setAiError(e.detail)
+      setAiLoading(false)
+    }
+
+    window.addEventListener('ai-review-started', onStarted)
+    window.addEventListener('ai-review-completed', onCompleted)
+    window.addEventListener('ai-review-failed', onFailed)
+
+    return () => {
+      window.removeEventListener('ai-review-started', onStarted)
+      window.removeEventListener('ai-review-completed', onCompleted)
+      window.removeEventListener('ai-review-failed', onFailed)
+    }
+  }, [])
+
   const handleAiReview = async (force = false) => {
     setAiLoading(true)
     setAiError('')
