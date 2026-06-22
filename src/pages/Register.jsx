@@ -2,9 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import api from '../api/axios.js'
-
-const API_BASE = 'http://localhost:8000/api'
-
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 export default function Register() {
   const [form, setForm] = useState({ username: '', email: '', password: '' })
   const [error, setError] = useState('')
