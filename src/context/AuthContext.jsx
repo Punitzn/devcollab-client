@@ -5,9 +5,9 @@ const AuthContext = createContext()
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true) // true while checking session
+  const [loading, setLoading] = useState(false) // don't block render on startup
 
-  // On app mount: check for OAuth token in URL, then verify session
+  // On app mount: check for OAuth token in URL, then verify session in background
   useEffect(() => {
     const checkSession = async () => {
       // Read token from URL after OAuth redirect (e.g. /?token=xxx)
@@ -25,8 +25,6 @@ export const AuthProvider = ({ children }) => {
       } catch {
         // Token missing or expired — user is not logged in
         setUser(null)
-      } finally {
-        setLoading(false)
       }
     }
     checkSession()

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../api/axios.js'
 import SnippetCard from '../components/SnippetCard.jsx'
@@ -8,30 +8,51 @@ const LANGUAGES = ['all', 'javascript', 'python', 'cpp', 'java', 'typescript', '
 
 export default function Home() {
   const { user } = useAuth()
-  const [snippets, setSnippets] = useState([])
-  const [language, setLanguage] = useState('all')
-  const [search, setSearch] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [snippets, setSnippets]         = useState([])
+  const [language, setLanguage]         = useState('all')
+  const [search, setSearch]             = useState('')
+  const [loading, setLoading]           = useState(true)
+  const [loadingMore, setLoadingMore]   = useState(false)
+  const [page, setPage]                 = useState(1)
+  const [totalPages, setTotalPages]     = useState(1)
+  const isFirstRender                   = useRef(true)
+
+  // Reset to page 1 whenever filters change
+  useEffect(() => {
+    setPage(1)
+    setSnippets([])
+  }, [language, search])
 
   useEffect(() => {
     const fetchSnippets = async () => {
-      setLoading(true)
+      // First page = full loading state; subsequent = "load more" spinner
+      if (page === 1) setLoading(true)
+      else setLoadingMore(true)
+
       try {
-        const params = {}
+        const params = { page, limit: 20 }
         if (language !== 'all') params.language = language
         if (search) params.search = search
+
         const { data } = await api.get('/snippets', { params })
-        setSnippets(data)
+        const incoming = data.snippets ?? data // backwards-compat fallback
+
+        setSnippets((prev) => page === 1 ? incoming : [...prev, ...incoming])
+        setTotalPages(data.totalPages ?? 1)
       } catch (err) {
         console.error('Failed to fetch snippets:', err)
       } finally {
         setLoading(false)
+        setLoadingMore(false)
       }
     }
 
-    const debounce = setTimeout(fetchSnippets, search ? 400 : 0)
-    return () => clearTimeout(debounce)
-  }, [language, search])
+    // Debounce only for search input; fire immediately for language / page changes
+    const delay = search && !isFirstRender.current ? 400 : 0
+    isFirstRender.current = false
+    const timer = setTimeout(fetchSnippets, delay)
+    return () => clearTimeout(timer)
+  }, [language, search, page])
 
   return (
     <div>
@@ -104,11 +125,27 @@ export default function Home() {
             )}
           </div>
         ) : (
-          <div className='snippets-grid fade-in'>
-            {snippets.map((s) => (
-              <SnippetCard key={s._id} snippet={s} />
-            ))}
-          </div>
+          <>
+            <div className='snippets-grid fade-in'>
+              {snippets.map((s) => (
+                <SnippetCard key={s._id} snippet={s} />
+              ))}
+            </div>
+
+            {/* Load More */}
+            {page < totalPages && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>
+                <button
+                  className='btn btn-ghost'
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={loadingMore}
+                  style={{ padding: '0.65rem 2rem', minWidth: '140px' }}
+                >
+                  {loadingMore ? <span className='spinner' style={{ width: '16px', height: '16px', borderWidth: '2px' }} /> : 'Load More'}
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
