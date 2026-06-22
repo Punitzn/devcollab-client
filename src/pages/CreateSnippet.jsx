@@ -1,16 +1,27 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import api from '../api/axios.js'
 
 const LANGUAGES = ['javascript', 'python', 'cpp', 'java', 'typescript', 'go', 'rust']
 
+
+
 export default function CreateSnippet() {
-  const [form, setForm] = useState({ title: '', description: '', code: '', language: 'javascript', tags: '' })
+  const [form, setForm] = useState({
+    title: '',
+    description: '',
+    code: '',
+    language: 'javascript',
+    tags: '',
+  })
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setError('')
+    setLoading(true)
     try {
       const payload = {
         ...form,
@@ -19,61 +30,104 @@ export default function CreateSnippet() {
       const { data } = await api.post('/snippets', payload)
       navigate(`/snippets/${data._id}`)
     } catch (err) {
-      setError(err.response?.data?.message || 'Something went wrong')
+      setError(err.response?.data?.message || 'Failed to create snippet. Make sure you are logged in.')
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <div style={styles.container}>
-      <h2 style={styles.title}>Post a snippet</h2>
-      {error && <p style={styles.error}>{error}</p>}
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <input
-          style={styles.input}
-          placeholder='Title'
-          value={form.title}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
-        />
-        <input
-          style={styles.input}
-          placeholder='Description'
-          value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
-        />
-        <select
-          style={styles.input}
-          value={form.language}
-          onChange={(e) => setForm({ ...form, language: e.target.value })}
+    <div className='create-page'>
+      <div className='create-header'>
+        <Link
+          to='/'
+          style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', marginBottom: '1rem' }}
         >
-          {LANGUAGES.map((l) => (
-            <option key={l} value={l}>{l}</option>
-          ))}
-        </select>
-        <textarea
-          style={{ ...styles.input, height: '200px', fontFamily: 'monospace', resize: 'vertical' }}
-          placeholder='Paste your code here...'
-          value={form.code}
-          onChange={(e) => setForm({ ...form, code: e.target.value })}
-        />
-        <input
-          style={styles.input}
-          placeholder='Tags (comma separated: sorting, arrays, dp)'
-          value={form.tags}
-          onChange={(e) => setForm({ ...form, tags: e.target.value })}
-        />
-        <button type='submit' style={styles.btn}>
-          Post Snippet
-        </button>
+          ← Back to snippets
+        </Link>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: '800', letterSpacing: '-0.04em' }}>
+          Post a Snippet
+        </h1>
+        <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem', fontSize: '0.9rem' }}>
+          Share your code with the DevCollab community
+        </p>
+      </div>
+
+      {error && <div className='auth-error' style={{ marginBottom: '1.25rem' }}>{error}</div>}
+
+      <form onSubmit={handleSubmit} className='create-form'>
+        <div className='form-group'>
+          <label className='form-label'>Title *</label>
+          <input
+            className='input'
+            placeholder='e.g. Binary Search in Python'
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            required
+          />
+        </div>
+
+        <div className='form-group'>
+          <label className='form-label'>Description</label>
+          <input
+            className='input'
+            placeholder='Brief description of what this snippet does...'
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+          />
+        </div>
+
+        <div className='form-group'>
+          <label className='form-label'>Language *</label>
+          <select
+            className='input'
+            value={form.language}
+            onChange={(e) => setForm({ ...form, language: e.target.value })}
+          >
+            {LANGUAGES.map((l) => (
+              <option key={l} value={l}>
+                {l === 'cpp' ? 'C++' : l.charAt(0).toUpperCase() + l.slice(1)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className='form-group'>
+          <label className='form-label'>Code *</label>
+          <textarea
+            className='input'
+            placeholder='// Paste your code here...'
+            value={form.code}
+            onChange={(e) => setForm({ ...form, code: e.target.value })}
+            required
+          />
+        </div>
+
+        <div className='form-group'>
+          <label className='form-label'>Tags</label>
+          <input
+            className='input'
+            placeholder='sorting, arrays, dynamic-programming'
+            value={form.tags}
+            onChange={(e) => setForm({ ...form, tags: e.target.value })}
+          />
+          <span className='form-hint'>Comma-separated tags to help others discover your snippet</span>
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.75rem', paddingTop: '0.5rem' }}>
+          <button
+            type='submit'
+            className='btn btn-primary'
+            style={{ padding: '0.75rem 2rem' }}
+            disabled={loading}
+          >
+            {loading ? 'Posting...' : 'Post Snippet'}
+          </button>
+          <Link to='/' className='btn btn-ghost' style={{ padding: '0.75rem 1.25rem' }}>
+            Cancel
+          </Link>
+        </div>
       </form>
     </div>
   )
-}
-
-const styles = {
-  container: { maxWidth: '700px', margin: '0 auto', padding: '2rem 1rem' },
-  title: { fontSize: '1.4rem', fontWeight: '600', marginBottom: '1.5rem' },
-  form: { display: 'flex', flexDirection: 'column', gap: '1rem' },
-  input: { padding: '0.7rem 1rem', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.95rem' },
-  btn: { padding: '0.75rem', background: '#111', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '1rem' },
-  error: { color: '#ef4444', marginBottom: '1rem', fontSize: '0.9rem' },
 }
