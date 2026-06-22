@@ -3,6 +3,9 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import api from '../api/axios.js'
 import { isApiPointingAtFrontend } from '../api/config.js'
 import { useAuth } from '../context/AuthContext.jsx'
+import Editor from '@monaco-editor/react'
+
+const LANGUAGES = ['javascript', 'python', 'cpp', 'java', 'typescript', 'go', 'rust']
 
 export default function SnippetDetail() {
   const { id } = useParams()
@@ -19,12 +22,40 @@ export default function SnippetDetail() {
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
 
+  const [editorLanguage, setEditorLanguage] = useState('javascript')
+  
+  const [isEditing, setIsEditing] = useState(false)
+  const [editedTitle, setEditedTitle] = useState('')
+  const [editedDescription, setEditedDescription] = useState('')
+  const [editedCode, setEditedCode] = useState('')
+  const [editedLanguage, setEditedLanguage] = useState('javascript')
+  const [editedTags, setEditedTags] = useState([])
+  const [tagInput, setTagInput] = useState('')
+
+  const [editorTheme, setEditorTheme] = useState(() => {
+    return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'vs-dark'
+  })
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const current = document.documentElement.getAttribute('data-theme')
+      setEditorTheme(current === 'light' ? 'light' : 'vs-dark')
+    })
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+    return () => observer.disconnect()
+  }, [])
+
   useEffect(() => {
     const fetchSnippet = async () => {
       try {
         const { data } = await api.get(`/snippets/${id}`)
         setSnippet(data)
-        // Load cached AI review if it exists
+        setEditedTitle(data.title)
+        setEditedDescription(data.description || '')
+        setEditedCode(data.code)
+        setEditedLanguage(data.language)
+        setEditedTags(data.tags || [])
+        setEditorLanguage(data.language)
         if (data.aiReview?.generatedAt) {
           setAiReview(data.aiReview)
         }
@@ -166,12 +197,70 @@ export default function SnippetDetail() {
     }
   }
 
+  const handleUpdateSnippet = async () => {
+    if (!editedTitle.trim()) {
+      setError('Title is required')
+      return
+    }
+    const currentCode = isEditing ? editedCode : snippet.code
+    if (!currentCode.trim()) {
+      setError('Code is required')
+      return
+    }
+    setSubmitting(true)
+    setError('')
+    try {
+      const { data } = await api.put(`/snippets/${id}`, {
+        title: editedTitle,
+        description: editedDescription,
+        code: currentCode,
+        language: editedLanguage,
+        tags: editedTags,
+      })
+      setSnippet((prev) => ({
+        ...prev,
+        title: data.title,
+        description: data.description,
+        code: data.code,
+        language: data.language,
+        tags: data.tags,
+      }))
+      setIsEditing(false)
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update snippet.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const handleCopy = () => {
-    if (!snippet?.code) return
-    navigator.clipboard.writeText(snippet.code).then(() => {
+    const codeToCopy = isEditing ? editedCode : snippet?.code
+    if (!codeToCopy) return
+    navigator.clipboard.writeText(codeToCopy).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
+  }
+
+  const addEditedTag = (tag) => {
+    const trimmed = tag.trim().toLowerCase().replace(/,/g, '')
+    if (trimmed && !editedTags.includes(trimmed)) {
+      setEditedTags([...editedTags, trimmed])
+    }
+    setTagInput('')
+  }
+
+  const handleEditedTagKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault()
+      addEditedTag(tagInput)
+    } else if (e.key === 'Backspace' && !tagInput && editedTags.length > 0) {
+      setEditedTags(editedTags.slice(0, -1))
+    }
+  }
+
+  const removeEditedTag = (indexToRemove) => {
+    setEditedTags(editedTags.filter((_, i) => i !== indexToRemove))
   }
 
   if (loading) {
@@ -199,7 +288,6 @@ export default function SnippetDetail() {
     )
   }
 
-  // Check if current user has voted
   const hasUpvoted =
     user &&
     snippet.upvotes?.some((uid) => uid === user._id || uid?._id === user._id)
@@ -209,20 +297,71 @@ export default function SnippetDetail() {
 
   return (
     <div className="detail-page">
-      {/* Header */}
       <div className="detail-header">
         <div className="detail-meta">
           <span className="badge badge-lang">{snippet.language}</span>
-          {snippet.tags?.map((tag) => (
+          {!isEditing && snippet.tags?.map((tag) => (
             <span key={tag} className="tag">
               #{tag}
             </span>
           ))}
         </div>
-        <h1 className="detail-title">{snippet.title}</h1>
-        {snippet.description && (
-          <p className="detail-desc">{snippet.description}</p>
+        
+        {isEditing ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.25rem', marginTop: '0.5rem' }}>
+            <div className="form-group">
+              <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>Title *</label>
+              <input
+                className="input"
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                placeholder="Snippet title..."
+                style={{ fontSize: '1.25rem', fontWeight: 'bold' }}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>Description</label>
+              <textarea
+                className="input"
+                value={editedDescription}
+                onChange={(e) => setEditedDescription(e.target.value)}
+                placeholder="Snippet description..."
+                style={{ minHeight: '60px', resize: 'vertical' }}
+              />
+            </div>
+            <div className='form-group'>
+              <label className='form-label' style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>Tags</label>
+              <div className='tags-input-container' style={{ background: 'var(--bg-elevated)' }}>
+                {editedTags.map((tag, idx) => (
+                  <span key={idx} className='tag-badge'>
+                    {tag}
+                    <button type='button' onClick={() => removeEditedTag(idx)} aria-label={`Remove tag ${tag}`}>
+                      <i className='fa-solid fa-xmark'></i>
+                    </button>
+                  </span>
+                ))}
+                <input
+                  className='tag-input-field'
+                  placeholder={editedTags.length === 0 ? 'Type tag and press Enter or Comma...' : 'Add tag...'}
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={handleEditedTagKeyDown}
+                  onBlur={() => {
+                    if (tagInput.trim()) addEditedTag(tagInput)
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            <h1 className="detail-title">{snippet.title}</h1>
+            {snippet.description && (
+              <p className="detail-desc">{snippet.description}</p>
+            )}
+          </>
         )}
+
         <div
           style={{
             display: 'flex',
@@ -244,29 +383,71 @@ export default function SnippetDetail() {
           </p>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {user &&
-              (user._id === snippet.author?._id ||
-                user._id === snippet.author) && (
+            {user && (user._id === snippet.author?._id || user._id === snippet.author) && (
+              <>
                 <button
                   className="btn btn-ghost"
                   style={{
-                    color: 'var(--error)',
+                    color: 'var(--accent)',
                     borderColor: 'transparent',
                     padding: '0.4rem 0.75rem',
                     fontSize: '0.85rem',
                   }}
-                  onClick={handleDeleteSnippet}
-                  title="Delete snippet"
+                  onClick={() => {
+                    if (isEditing) {
+                      setIsEditing(false)
+                      setEditedTitle(snippet.title)
+                      setEditedDescription(snippet.description || '')
+                      setEditedCode(snippet.code)
+                      setEditedLanguage(snippet.language)
+                      setEditedTags(snippet.tags || [])
+                      setEditorLanguage(snippet.language)
+                    } else {
+                      setIsEditing(true)
+                      setEditedTitle(snippet.title)
+                      setEditedDescription(snippet.description || '')
+                      setEditedCode(snippet.code)
+                      setEditedLanguage(snippet.language)
+                      setEditedTags(snippet.tags || [])
+                    }
+                  }}
                 >
-                  <i
-                    className="fa-regular fa-trash-can"
-                    style={{ marginRight: '0.35rem' }}
-                  ></i>{' '}
-                  Delete
+                  <i className={`fa-regular ${isEditing ? 'fa-circle-xmark' : 'fa-pen-to-square'}`} style={{ marginRight: '0.35rem' }}></i>
+                  {isEditing ? 'Cancel' : 'Edit'}
                 </button>
-              )}
+                {isEditing && (
+                  <button
+                    className="btn btn-primary"
+                    style={{
+                      padding: '0.4rem 1rem',
+                      fontSize: '0.85rem',
+                    }}
+                    onClick={handleUpdateSnippet}
+                    disabled={submitting}
+                  >
+                    <i className="fa-regular fa-floppy-disk" style={{ marginRight: '0.35rem' }}></i>
+                    Save
+                  </button>
+                )}
+                {!isEditing && (
+                  <button
+                    className="btn btn-ghost"
+                    style={{
+                      color: 'var(--error)',
+                      borderColor: 'transparent',
+                      padding: '0.4rem 0.75rem',
+                      fontSize: '0.85rem',
+                    }}
+                    onClick={handleDeleteSnippet}
+                    title="Delete snippet"
+                  >
+                    <i className="fa-regular fa-trash-can" style={{ marginRight: '0.35rem' }}></i>
+                    Delete
+                  </button>
+                )}
+              </>
+            )}
 
-            {/* Snippet Vote Buttons */}
             <div className="snippet-vote-row">
               <button
                 className={`vote-btn vote-up${hasUpvoted ? ' active' : ''}`}
@@ -304,7 +485,8 @@ export default function SnippetDetail() {
         </div>
       </div>
 
-      {/* Code Block */}
+      {error && <div className='auth-error' style={{ marginBottom: '1.25rem' }}>{error}</div>}
+
       <div className="code-block-wrapper">
         <div className="code-block-header">
           <div className="code-block-dots">
@@ -312,15 +494,65 @@ export default function SnippetDetail() {
             <span className="dot dot-yellow"></span>
             <span className="dot dot-green"></span>
           </div>
-          <span className="code-block-lang">{snippet.language}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span className="code-block-lang" style={{ color: 'var(--text-muted)' }}>Language</span>
+            <select
+              className="input"
+              style={{
+                padding: '0.2rem 2rem 0.2rem 0.5rem',
+                fontSize: '0.75rem',
+                height: '28px',
+                width: 'auto',
+                minWidth: '110px',
+                background: 'var(--bg-elevated)',
+                borderColor: 'var(--border-subtle)',
+              }}
+              value={editorLanguage}
+              onChange={(e) => {
+                const newLang = e.target.value
+                setEditorLanguage(newLang)
+                setEditedLanguage(newLang)
+              }}
+            >
+              {LANGUAGES.map((l) => (
+                <option key={l} value={l}>
+                  {l === 'cpp' ? 'C++' : l.charAt(0).toUpperCase() + l.slice(1)}
+                </option>
+              ))}
+            </select>
+          </div>
           <button onClick={handleCopy} className="copy-btn">
             {copied ? '✓ Copied!' : 'Copy'}
           </button>
         </div>
-        <pre className="code-block">{snippet.code}</pre>
+        <div style={{ background: editorTheme === 'vs-dark' ? '#1e1e1e' : '#fff' }}>
+          <Editor
+            height="400px"
+            language={editorLanguage}
+            theme={editorTheme}
+            value={isEditing ? editedCode : snippet.code}
+            onChange={(val) => {
+              if (isEditing) {
+                setEditedCode(val || '')
+              }
+            }}
+            loading={<div className="loading-monaco" style={{ color: 'var(--text-muted)', padding: '4rem 2rem', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.9rem' }}><i className="fa-solid fa-spinner fa-spin" style={{ marginRight: '0.5rem' }}></i>Loading Editor...</div>}
+            options={{
+              fontSize: 14,
+              minimap: { enabled: false },
+              scrollBeyondLastLine: false,
+              lineNumbers: 'on',
+              roundedSelection: true,
+              padding: { top: 12, bottom: 12 },
+              automaticLayout: true,
+              fontFamily: 'var(--font-mono)',
+              readOnly: !isEditing,
+              tabSize: 2,
+            }}
+          />
+        </div>
       </div>
 
-      {/* ─── AI Review Section ─────────────────────────────────── */}
       <div className="ai-review-section">
         <div className="ai-review-header">
           <div
