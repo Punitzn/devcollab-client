@@ -13,6 +13,10 @@ export default function Profile() {
   const [profile, setProfile] = useState(null)
   const [snippets, setSnippets] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalSnippets, setTotalSnippets] = useState(0)
   const [activeTab, setActiveTab] = useState('snippets') // 'snippets' | 'edit' | 'security'
 
   // Edit profile form
@@ -29,26 +33,47 @@ export default function Profile() {
 
   const isOwnProfile = currentUser && (currentUser._id === id)
 
+  const [prevId, setPrevId] = useState(id)
+  if (id !== prevId) {
+    setPrevId(id)
+    setPage(1)
+    setSnippets([])
+    setTotalPages(1)
+    setTotalSnippets(0)
+  }
+
   useEffect(() => {
     const fetchProfile = async () => {
-      setLoading(true)
+      if (page === 1) setLoading(true)
+      else setLoadingMore(true)
+
       try {
-        const { data } = await api.get(`/users/${id}`)
-        setProfile(data.user)
-        setSnippets(data.snippets)
-        setEditForm({
-          username: data.user.username || '',
-          bio: data.user.bio || '',
-          avatar: data.user.avatar || '',
+        const { data } = await api.get(`/users/${id}`, {
+          params: { page, limit: 10 },
         })
+
+        if (page === 1) {
+          setProfile(data.user)
+          setSnippets(data.snippets || [])
+          setTotalSnippets(data.total || 0)
+          setEditForm({
+            username: data.user.username || '',
+            bio: data.user.bio || '',
+            avatar: data.user.avatar || '',
+          })
+        } else {
+          setSnippets((prev) => [...prev, ...(data.snippets || [])])
+        }
+        setTotalPages(data.totalPages ?? 1)
       } catch {
-        setProfile(null)
+        if (page === 1) setProfile(null)
       } finally {
         setLoading(false)
+        setLoadingMore(false)
       }
     }
     fetchProfile()
-  }, [id])
+  }, [id, page])
 
   const handleEditSubmit = async (e) => {
     e.preventDefault()
@@ -138,7 +163,7 @@ export default function Profile() {
             </span>
             <span className='profile-stat' style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
               <i className='fa-solid fa-code'></i>
-              {snippets.length} snippets
+              {totalSnippets} snippets
             </span>
           </div>
         </div>
@@ -150,7 +175,7 @@ export default function Profile() {
           className={`profile-tab${activeTab === 'snippets' ? ' active' : ''}`}
           onClick={() => setActiveTab('snippets')}
         >
-          Snippets ({snippets.length})
+          Snippets ({totalSnippets})
         </button>
         {isOwnProfile && (
           <>
@@ -189,11 +214,30 @@ export default function Profile() {
               )}
             </div>
           ) : (
-            <div className='snippets-grid'>
-              {snippets.map((s) => (
-                <SnippetCard key={s._id} snippet={{ ...s, author: profile }} />
-              ))}
-            </div>
+            <>
+              <div className='snippets-grid'>
+                {snippets.map((s) => (
+                  <SnippetCard key={s._id} snippet={{ ...s, author: profile }} />
+                ))}
+              </div>
+
+              {page < totalPages && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>
+                  <button
+                    className='btn btn-ghost'
+                    onClick={() => setPage((p) => p + 1)}
+                    disabled={loadingMore}
+                    style={{ padding: '0.65rem 2rem', minWidth: '140px' }}
+                  >
+                    {loadingMore ? (
+                      <span className='spinner' style={{ width: '16px', height: '16px', borderWidth: '2px' }} />
+                    ) : (
+                      'Load More'
+                    )}
+                  </button>
+                </div>
+              )}
+            </>
           )
         )}
 
