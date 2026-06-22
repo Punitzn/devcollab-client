@@ -9,9 +9,11 @@ export default function CreateSnippet() {
   const [form, setForm] = useState({
     title: '',
     description: '',
-    code: '',
-    language: 'javascript',
   })
+  const [codeVersions, setCodeVersions] = useState([
+    { language: 'javascript', code: '' }
+  ])
+  const [activeVersionIndex, setActiveVersionIndex] = useState(0)
   const [tags, setTags] = useState([])
   const [tagInput, setTagInput] = useState('')
   const [error, setError] = useState('')
@@ -32,20 +34,48 @@ export default function CreateSnippet() {
     return () => observer.disconnect()
   }, [])
 
+  const handleAddVersion = (newLang) => {
+    // Copy active code over as a template helper
+    const activeCode = codeVersions[activeVersionIndex]?.code || ''
+    const updated = [...codeVersions, { language: newLang, code: activeCode }]
+    setCodeVersions(updated)
+    setActiveVersionIndex(updated.length - 1)
+  }
+
+  const handleDeleteVersion = (indexToDelete) => {
+    if (codeVersions.length <= 1) return
+    const updated = codeVersions.filter((_, i) => i !== indexToDelete)
+    setCodeVersions(updated)
+    if (activeVersionIndex >= updated.length) {
+      setActiveVersionIndex(updated.length - 1)
+    } else if (activeVersionIndex === indexToDelete && activeVersionIndex > 0) {
+      setActiveVersionIndex(activeVersionIndex - 1)
+    }
+  }
+
+  const handleEditorChange = (val) => {
+    const updated = [...codeVersions]
+    updated[activeVersionIndex].code = val || ''
+    setCodeVersions(updated)
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.code.trim()) {
+    const primaryVersion = codeVersions[0]
+    if (!primaryVersion || !primaryVersion.code.trim()) {
       setError('Code is required')
       return
     }
     setError('')
     setLoading(true)
     try {
+      const validVersions = codeVersions.filter(v => v.code.trim() !== '')
       const payload = {
         title: form.title,
         description: form.description,
-        code: form.code,
-        language: form.language,
+        code: primaryVersion.code,
+        language: primaryVersion.language,
+        codeVersions: validVersions.length > 0 ? validVersions : [primaryVersion],
         tags: tags,
       }
       const { data } = await api.post('/snippets', payload)
@@ -56,6 +86,11 @@ export default function CreateSnippet() {
       setLoading(false)
     }
   }
+
+  const writtenLanguages = codeVersions.map(v => v.language)
+  const availableLanguages = LANGUAGES.filter(l => !writtenLanguages.includes(l))
+
+  const activeVersion = codeVersions[activeVersionIndex] || { language: 'javascript', code: '' }
 
   const addTag = (tag) => {
     const trimmed = tag.trim().toLowerCase().replace(/,/g, '')
@@ -104,42 +139,70 @@ export default function CreateSnippet() {
             <label className='form-label'>Code *</label>
             <div className="code-block-wrapper" style={{ marginBottom: '0', flex: 1, display: 'flex', flexDirection: 'column' }}>
               <div className="code-block-header">
-                <div className="code-block-dots">
-                  <span className="dot dot-red"></span>
-                  <span className="dot dot-yellow"></span>
-                  <span className="dot dot-green"></span>
+                <div className="code-block-header-top">
+                  <div className="code-block-dots">
+                    <span className="dot dot-red"></span>
+                    <span className="dot dot-yellow"></span>
+                    <span className="dot dot-green"></span>
+                  </div>
+                  <span className="code-block-lang" style={{ color: 'var(--text-muted)' }}>Workspace</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <span className="code-block-lang" style={{ color: 'var(--text-muted)' }}>Editor</span>
-                  <select
-                    className='input'
-                    style={{
-                      padding: '0.2rem 2rem 0.2rem 0.5rem',
-                      fontSize: '0.75rem',
-                      height: '28px',
-                      width: 'auto',
-                      minWidth: '110px',
-                      background: 'var(--bg-elevated)',
-                      borderColor: 'var(--border-subtle)',
-                    }}
-                    value={form.language}
-                    onChange={(e) => setForm({ ...form, language: e.target.value })}
-                  >
-                    {LANGUAGES.map((l) => (
-                      <option key={l} value={l}>
-                        {l === 'cpp' ? 'C++' : l.charAt(0).toUpperCase() + l.slice(1)}
-                      </option>
-                    ))}
-                  </select>
+
+                <div className="editor-tabs-bar">
+                  {codeVersions.map((version, idx) => (
+                    <div
+                      key={version.language}
+                      className={`editor-tab ${idx === activeVersionIndex ? 'active' : ''}`}
+                      onClick={() => setActiveVersionIndex(idx)}
+                    >
+                      <span className="tab-lang-label">
+                        {version.language === 'cpp' ? 'C++' : version.language.charAt(0).toUpperCase() + version.language.slice(1)}
+                      </span>
+                      {codeVersions.length > 1 && (
+                        <button
+                          type="button"
+                          className="tab-close-btn"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteVersion(idx)
+                          }}
+                          title={`Delete ${version.language} version`}
+                        >
+                          <i className="fa-solid fa-xmark"></i>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
+                  {availableLanguages.length > 0 && (
+                    <div className="add-lang-container">
+                      <select
+                        className="add-lang-select"
+                        value=""
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            handleAddVersion(e.target.value)
+                          }
+                        }}
+                      >
+                        <option value="" disabled>+ Add Language</option>
+                        {availableLanguages.map((lang) => (
+                          <option key={lang} value={lang}>
+                            {lang === 'cpp' ? 'C++' : lang.charAt(0).toUpperCase() + lang.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
               </div>
               <div style={{ background: editorTheme === 'vs-dark' ? '#1e1e1e' : '#fff', flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <Editor
                   height="450px"
-                  language={form.language}
+                  language={activeVersion.language}
                   theme={editorTheme}
-                  value={form.code}
-                  onChange={(val) => setForm((prev) => ({ ...prev, code: val || '' }))}
+                  value={activeVersion.code}
+                  onChange={handleEditorChange}
                   loading={<div className="loading-monaco" style={{ color: 'var(--text-muted)', padding: '4rem 2rem', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.9rem' }}><i className="fa-solid fa-spinner fa-spin" style={{ marginRight: '0.5rem' }}></i>Loading Editor...</div>}
                   options={{
                     fontSize: 14,

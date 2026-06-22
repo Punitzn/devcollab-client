@@ -22,15 +22,43 @@ export default function SnippetDetail() {
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
 
-  const [editorLanguage, setEditorLanguage] = useState('javascript')
+  const [codeVersions, setCodeVersions] = useState([])
+  const [activeVersionIndex, setActiveVersionIndex] = useState(0)
   
   const [isEditing, setIsEditing] = useState(false)
   const [editedTitle, setEditedTitle] = useState('')
   const [editedDescription, setEditedDescription] = useState('')
-  const [editedCode, setEditedCode] = useState('')
-  const [editedLanguage, setEditedLanguage] = useState('javascript')
+  const [editedCodeVersions, setEditedCodeVersions] = useState([])
+  const [editedActiveVersionIndex, setEditedActiveVersionIndex] = useState(0)
   const [editedTags, setEditedTags] = useState([])
   const [tagInput, setTagInput] = useState('')
+
+  const writtenLanguages = editedCodeVersions.map(v => v.language)
+  const availableLanguages = LANGUAGES.filter(l => !writtenLanguages.includes(l))
+
+  const handleAddVersion = (newLang) => {
+    const activeCode = editedCodeVersions[editedActiveVersionIndex]?.code || ''
+    const updated = [...editedCodeVersions, { language: newLang, code: activeCode }]
+    setEditedCodeVersions(updated)
+    setEditedActiveVersionIndex(updated.length - 1)
+  }
+
+  const handleDeleteVersion = (indexToDelete) => {
+    if (editedCodeVersions.length <= 1) return
+    const updated = editedCodeVersions.filter((_, i) => i !== indexToDelete)
+    setEditedCodeVersions(updated)
+    if (editedActiveVersionIndex >= updated.length) {
+      setEditedActiveVersionIndex(updated.length - 1)
+    } else if (editedActiveVersionIndex === indexToDelete && editedActiveVersionIndex > 0) {
+      setEditedActiveVersionIndex(editedActiveVersionIndex - 1)
+    }
+  }
+
+  const handleEditorChange = (val) => {
+    const updated = [...editedCodeVersions]
+    updated[editedActiveVersionIndex].code = val || ''
+    setEditedCodeVersions(updated)
+  }
 
   const [editorTheme, setEditorTheme] = useState(() => {
     return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'vs-dark'
@@ -49,13 +77,19 @@ export default function SnippetDetail() {
     const fetchSnippet = async () => {
       try {
         const { data } = await api.get(`/snippets/${id}`)
+        const versions = data.codeVersions && data.codeVersions.length > 0
+          ? data.codeVersions
+          : [{ language: data.language, code: data.code }]
+
         setSnippet(data)
+        setCodeVersions(versions)
+        setActiveVersionIndex(0)
+
         setEditedTitle(data.title)
         setEditedDescription(data.description || '')
-        setEditedCode(data.code)
-        setEditedLanguage(data.language)
+        setEditedCodeVersions(versions.map(v => ({ ...v })))
+        setEditedActiveVersionIndex(0)
         setEditedTags(data.tags || [])
-        setEditorLanguage(data.language)
         if (data.aiReview?.generatedAt) {
           setAiReview(data.aiReview)
         }
@@ -202,29 +236,30 @@ export default function SnippetDetail() {
       setError('Title is required')
       return
     }
-    const currentCode = isEditing ? editedCode : snippet.code
-    if (!currentCode.trim()) {
+    const primaryVersion = editedCodeVersions[0]
+    if (!primaryVersion || !primaryVersion.code.trim()) {
       setError('Code is required')
       return
     }
     setSubmitting(true)
     setError('')
     try {
-      const { data } = await api.put(`/snippets/${id}`, {
+      const validVersions = editedCodeVersions.filter(v => v.code.trim() !== '')
+      const payload = {
         title: editedTitle,
         description: editedDescription,
-        code: currentCode,
-        language: editedLanguage,
+        codeVersions: validVersions.length > 0 ? validVersions : [primaryVersion],
         tags: editedTags,
-      })
-      setSnippet((prev) => ({
-        ...prev,
-        title: data.title,
-        description: data.description,
-        code: data.code,
-        language: data.language,
-        tags: data.tags,
-      }))
+      }
+      const { data } = await api.put(`/snippets/${id}`, payload)
+      
+      const versions = data.codeVersions && data.codeVersions.length > 0
+        ? data.codeVersions
+        : [{ language: data.language, code: data.code }]
+
+      setSnippet(data)
+      setCodeVersions(versions)
+      setActiveVersionIndex(0)
       setIsEditing(false)
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update snippet.')
@@ -234,7 +269,9 @@ export default function SnippetDetail() {
   }
 
   const handleCopy = () => {
-    const codeToCopy = isEditing ? editedCode : snippet?.code
+    const codeToCopy = isEditing
+      ? (editedCodeVersions[editedActiveVersionIndex]?.code || '')
+      : (codeVersions[activeVersionIndex]?.code || '')
     if (!codeToCopy) return
     navigator.clipboard.writeText(codeToCopy).then(() => {
       setCopied(true)
@@ -299,7 +336,12 @@ export default function SnippetDetail() {
     <div className="detail-page">
       <div className="detail-header">
         <div className="detail-meta">
-          <span className="badge badge-lang">{snippet.language}</span>
+          <span className="badge badge-lang" style={{ textTransform: 'capitalize' }}>
+            {isEditing 
+              ? (editedCodeVersions[editedActiveVersionIndex]?.language === 'cpp' ? 'C++' : editedCodeVersions[editedActiveVersionIndex]?.language)
+              : (codeVersions[activeVersionIndex]?.language === 'cpp' ? 'C++' : codeVersions[activeVersionIndex]?.language)
+            }
+          </span>
           {!isEditing && snippet.tags?.map((tag) => (
             <span key={tag} className="tag">
               #{tag}
@@ -398,16 +440,15 @@ export default function SnippetDetail() {
                       setIsEditing(false)
                       setEditedTitle(snippet.title)
                       setEditedDescription(snippet.description || '')
-                      setEditedCode(snippet.code)
-                      setEditedLanguage(snippet.language)
+                      setEditedCodeVersions(codeVersions.map(v => ({ ...v })))
+                      setEditedActiveVersionIndex(0)
                       setEditedTags(snippet.tags || [])
-                      setEditorLanguage(snippet.language)
                     } else {
                       setIsEditing(true)
                       setEditedTitle(snippet.title)
                       setEditedDescription(snippet.description || '')
-                      setEditedCode(snippet.code)
-                      setEditedLanguage(snippet.language)
+                      setEditedCodeVersions(codeVersions.map(v => ({ ...v })))
+                      setEditedActiveVersionIndex(activeVersionIndex)
                       setEditedTags(snippet.tags || [])
                     }
                   }}
@@ -489,53 +530,118 @@ export default function SnippetDetail() {
 
       <div className="code-block-wrapper">
         <div className="code-block-header">
-          <div className="code-block-dots">
-            <span className="dot dot-red"></span>
-            <span className="dot dot-yellow"></span>
-            <span className="dot dot-green"></span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <span className="code-block-lang" style={{ color: 'var(--text-muted)' }}>Language</span>
-            <select
-              className="input"
-              style={{
-                padding: '0.2rem 2rem 0.2rem 0.5rem',
-                fontSize: '0.75rem',
-                height: '28px',
-                width: 'auto',
-                minWidth: '110px',
-                background: 'var(--bg-elevated)',
-                borderColor: 'var(--border-subtle)',
-              }}
-              value={editorLanguage}
-              onChange={(e) => {
-                const newLang = e.target.value
-                setEditorLanguage(newLang)
-                setEditedLanguage(newLang)
-              }}
-            >
-              {LANGUAGES.map((l) => (
-                <option key={l} value={l}>
-                  {l === 'cpp' ? 'C++' : l.charAt(0).toUpperCase() + l.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <button onClick={handleCopy} className="copy-btn">
-            {copied ? '✓ Copied!' : 'Copy'}
-          </button>
+          {isEditing ? (
+            <>
+              <div className="code-block-header-top">
+                <div className="code-block-dots">
+                  <span className="dot dot-red"></span>
+                  <span className="dot dot-yellow"></span>
+                  <span className="dot dot-green"></span>
+                </div>
+                <span className="code-block-lang" style={{ color: 'var(--text-muted)' }}>Workspace</span>
+              </div>
+              <div className="editor-tabs-bar">
+                {editedCodeVersions.map((version, idx) => (
+                  <div
+                    key={version.language}
+                    className={`editor-tab ${idx === editedActiveVersionIndex ? 'active' : ''}`}
+                    onClick={() => setEditedActiveVersionIndex(idx)}
+                  >
+                    <span className="tab-lang-label">
+                      {version.language === 'cpp' ? 'C++' : version.language.charAt(0).toUpperCase() + version.language.slice(1)}
+                    </span>
+                    {editedCodeVersions.length > 1 && (
+                      <button
+                        type="button"
+                        className="tab-close-btn"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteVersion(idx)
+                        }}
+                        title={`Delete ${version.language} version`}
+                      >
+                        <i className="fa-solid fa-xmark"></i>
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {availableLanguages.length > 0 && (
+                  <div className="add-lang-container">
+                    <select
+                      className="add-lang-select"
+                      value=""
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          handleAddVersion(e.target.value)
+                        }
+                      }}
+                    >
+                      <option value="" disabled>+ Add Language</option>
+                      {availableLanguages.map((lang) => (
+                        <option key={lang} value={lang}>
+                          {lang === 'cpp' ? 'C++' : lang.charAt(0).toUpperCase() + lang.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="code-block-header-top" style={{ paddingBottom: 0 }}>
+              <div className="code-block-dots">
+                <span className="dot dot-red"></span>
+                <span className="dot dot-yellow"></span>
+                <span className="dot dot-green"></span>
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span className="code-block-lang" style={{ color: 'var(--text-muted)' }}>
+                  {codeVersions.length > 1 ? 'Language' : ''}
+                </span>
+                
+                {codeVersions.length > 1 ? (
+                  <select
+                    className="input"
+                    style={{
+                      padding: '0.2rem 2rem 0.2rem 0.5rem',
+                      fontSize: '0.75rem',
+                      height: '28px',
+                      width: 'auto',
+                      minWidth: '110px',
+                      background: 'var(--bg-elevated)',
+                      borderColor: 'var(--border-subtle)',
+                    }}
+                    value={activeVersionIndex}
+                    onChange={(e) => setActiveVersionIndex(parseInt(e.target.value))}
+                  >
+                    {codeVersions.map((v, idx) => (
+                      <option key={v.language} value={idx}>
+                        {v.language === 'cpp' ? 'C++' : v.language.charAt(0).toUpperCase() + v.language.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="badge badge-lang" style={{ margin: 0, textTransform: 'capitalize' }}>
+                    {codeVersions[0]?.language === 'cpp' ? 'C++' : codeVersions[0]?.language}
+                  </span>
+                )}
+              </div>
+              
+              <button onClick={handleCopy} className="copy-btn">
+                {copied ? '✓ Copied!' : 'Copy'}
+              </button>
+            </div>
+          )}
         </div>
+        
         <div style={{ background: editorTheme === 'vs-dark' ? '#1e1e1e' : '#fff', width: '100%' }}>
           <Editor
             height="400px"
-            language={editorLanguage}
+            language={isEditing ? (editedCodeVersions[editedActiveVersionIndex]?.language || 'javascript') : (codeVersions[activeVersionIndex]?.language || 'javascript')}
             theme={editorTheme}
-            value={isEditing ? editedCode : snippet.code}
-            onChange={(val) => {
-              if (isEditing) {
-                setEditedCode(val || '')
-              }
-            }}
+            value={isEditing ? (editedCodeVersions[editedActiveVersionIndex]?.code || '') : (codeVersions[activeVersionIndex]?.code || '')}
+            onChange={handleEditorChange}
             loading={<div className="loading-monaco" style={{ color: 'var(--text-muted)', padding: '4rem 2rem', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.9rem' }}><i className="fa-solid fa-spinner fa-spin" style={{ marginRight: '0.5rem' }}></i>Loading Editor...</div>}
             options={{
               fontSize: 14,
