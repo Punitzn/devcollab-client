@@ -1121,6 +1121,52 @@
 
 /* ===== COMMAND PALETTE (CTRL+K) ===== */
 
+:root {
+  --cmd-backdrop: rgba(8, 10, 16, 0.75);
+  --cmd-bg: rgba(23, 28, 41, 0.85);
+  --cmd-border: rgba(255, 255, 255, 0.08);
+  --cmd-shadow-1: rgba(0, 0, 0, 0.2);
+  --cmd-shadow-2: rgba(0, 0, 0, 0.6);
+  --cmd-border-inner: rgba(255, 255, 255, 0.06);
+  --cmd-scrollbar-thumb: rgba(255, 255, 255, 0.1);
+  --cmd-item-active-bg: rgba(255, 255, 255, 0.06);
+  --cmd-shortcut-bg: rgba(255, 255, 255, 0.05);
+  --cmd-shortcut-border: rgba(255, 255, 255, 0.04);
+  --cmd-avatar-border: rgba(255, 255, 255, 0.1);
+  --cmd-footer-bg: rgba(13, 16, 23, 0.45);
+  --cmd-footer-border: rgba(255, 255, 255, 0.05);
+  --cmd-kbd-bg: rgba(255, 255, 255, 0.06);
+  --cmd-kbd-border: rgba(255, 255, 255, 0.04);
+  --cmd-highlight-bg: rgba(79, 110, 247, 0.35);
+  --cmd-highlight-color: #fff;
+  --navbar-kbd-bg: rgba(255, 255, 255, 0.08);
+  --navbar-kbd-border: rgba(255, 255, 255, 0.12);
+  --navbar-kbd-shadow: rgba(0, 0, 0, 0.35);
+}
+
+:root[data-theme="light"] {
+  --cmd-backdrop: rgba(26, 26, 28, 0.3);
+  --cmd-bg: rgba(255, 255, 255, 0.92);
+  --cmd-border: rgba(0, 0, 0, 0.08);
+  --cmd-shadow-1: rgba(0, 0, 0, 0.02);
+  --cmd-shadow-2: rgba(26, 26, 28, 0.12);
+  --cmd-border-inner: rgba(0, 0, 0, 0.06);
+  --cmd-scrollbar-thumb: rgba(0, 0, 0, 0.12);
+  --cmd-item-active-bg: rgba(0, 0, 0, 0.04);
+  --cmd-shortcut-bg: rgba(0, 0, 0, 0.04);
+  --cmd-shortcut-border: rgba(0, 0, 0, 0.06);
+  --cmd-avatar-border: rgba(0, 0, 0, 0.08);
+  --cmd-footer-bg: rgba(242, 242, 237, 0.85);
+  --cmd-footer-border: rgba(0, 0, 0, 0.05);
+  --cmd-kbd-bg: rgba(0, 0, 0, 0.04);
+  --cmd-kbd-border: rgba(0, 0, 0, 0.06);
+  --cmd-highlight-bg: rgba(194, 90, 62, 0.18);
+  --cmd-highlight-color: var(--text-primary);
+  --navbar-kbd-bg: rgba(0, 0, 0, 0.04);
+  --navbar-kbd-border: rgba(0, 0, 0, 0.08);
+  --navbar-kbd-shadow: rgba(0, 0, 0, 0.05);
+}
+
 .cmd-backdrop {
   position: fixed;
   top: 0;
@@ -1128,7 +1174,7 @@
   right: 0;
   bottom: 0;
   z-index: 1000;
-  background: rgba(8, 10, 16, 0.75);
+  background: var(--cmd-backdrop);
   backdrop-filter: blur(12px) saturate(180%);
   -webkit-backdrop-filter: blur(12px) saturate(180%);
   display: flex;
@@ -1141,12 +1187,12 @@
 .cmd-card {
   width: 100%;
   max-width: 580px;
-  background: rgba(23, 28, 41, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--cmd-bg);
+  border: 1px solid var(--cmd-border);
   border-radius: var(--radius-lg);
   box-shadow: 
-    0 0 0 1px rgba(0, 0, 0, 0.2), 
-    0 16px 40px -8px rgba(0, 0, 0, 0.6);
+    0 0 0 1px var(--cmd-shadow-1), 
+    0 16px 40px -8px var(--cmd-shadow-2);
   overflow: hidden;
   animation: scaleUp 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -1165,7 +1211,7 @@
   display: flex;
   align-items: center;
   padding: 1.1rem 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--cmd-border-inner);
   position: relative;
 }
 
@@ -1209,7 +1255,7 @@
   width: 6px;
 }
 .cmd-list::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--cmd-scrollbar-thumb);
   border-radius: var(--radius-full);
 }
 
@@ -1249,7 +1295,7 @@
 }
 
 .cmd-item.active {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--cmd-item-active-bg);
   color: var(--text-primary);
 }
 
@@ -1287,9 +1333,9 @@
   font-weight: 600;
   font-family: var(--font-mono);
   padding: 0.15rem 0.4rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--cmd-shortcut-bg);
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--cmd-shortcut-border);
   color: var(--text-muted);
   margin-left: auto;
   letter-spacing: 0.05em;
@@ -1302,7 +1348,7 @@
   border-radius: 50%;
   object-fit: cover;
   margin-right: 0.85rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--cmd-avatar-border);
 }
 
 .cmd-avatar-fallback {
@@ -1324,8 +1370,8 @@
   display: flex;
   gap: 1.25rem;
   padding: 0.75rem 1.25rem;
-  background: rgba(13, 16, 23, 0.45);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--cmd-footer-bg);
+  border-top: 1px solid var(--cmd-footer-border);
   font-size: 0.75rem;
   color: var(--text-muted);
 }
@@ -1340,15 +1386,15 @@
   font-family: var(--font-mono);
   font-size: 0.7rem;
   padding: 0.05rem 0.25rem;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--cmd-kbd-bg);
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--cmd-kbd-border);
   color: var(--text-secondary);
 }
 
 .cmd-highlight {
-  background: rgba(79, 110, 247, 0.35);
-  color: #fff;
+  background: var(--cmd-highlight-bg);
+  color: var(--cmd-highlight-color);
   border-radius: 2px;
   padding: 0 1.5px;
 }
@@ -1373,21 +1419,27 @@
 }
 .navbar-search-hint i {
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: var(--text-secondary);
+  transition: color 0.2s;
 }
 .navbar-search-hint span {
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: var(--text-secondary);
+  transition: color 0.2s;
 }
 .navbar-search-hint kbd {
   font-size: 0.65rem;
   font-family: var(--font-mono);
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--navbar-kbd-bg);
+  border: 1px solid var(--navbar-kbd-border);
   border-radius: var(--radius-sm);
-  padding: 0.05rem 0.25rem;
-  color: var(--text-muted);
-  box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+  padding: 0.05rem 0.3rem;
+  color: var(--text-primary);
+  box-shadow: 0 1px 0 var(--navbar-kbd-shadow);
+}
+.navbar-search-hint:hover i,
+.navbar-search-hint:hover span {
+  color: var(--text-primary);
 }
 
 @media (max-width: 640px) {
