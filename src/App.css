@@ -901,6 +901,208 @@
   border-color: rgba(239, 68, 68, 0.3);
 }
 
+/* ===== ACTIVITY HEATMAP ===== */
+
+.heatmap-wrap {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem 1rem;
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+
+.heatmap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.heatmap-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.01em;
+}
+
+/* Body = day labels + grid */
+.heatmap-body {
+  display: flex;
+  gap: 4px;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+/* Left axis: day labels */
+.heatmap-day-labels {
+  display: grid;
+  grid-template-rows: repeat(7, 12px);
+  gap: 3px;
+  flex-shrink: 0;
+  margin-top: 18px; /* align with grid rows, below month labels */
+}
+
+.heatmap-day-label {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  line-height: 12px;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* Right side: month labels + grid */
+.heatmap-right {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* Month labels row */
+.heatmap-month-labels {
+  display: grid;
+  grid-template-columns: repeat(53, 12px);
+  gap: 3px;
+  height: 16px;
+}
+
+.heatmap-month-label {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  user-select: none;
+  line-height: 16px;
+}
+
+/* The grid itself: 53 columns × 7 rows */
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(53, 12px);
+  grid-template-rows: repeat(7, 12px);
+  grid-auto-flow: column; /* fill column by column (week by week) */
+  gap: 3px;
+}
+
+/* Individual day cell */
+.heatmap-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  cursor: default;
+  transition: opacity 0.15s, transform 0.1s;
+  flex-shrink: 0;
+}
+
+.heatmap-cell:hover {
+  opacity: 0.8;
+  transform: scale(1.25);
+}
+
+/* Colour levels using accent palette */
+.heatmap-cell[data-level="future"] {
+  background: transparent;
+  border: none;
+}
+
+.heatmap-cell[data-level="0"] {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+}
+
+.heatmap-cell[data-level="1"] {
+  background: rgba(217, 119, 87, 0.20);
+  border: 1px solid rgba(217, 119, 87, 0.15);
+}
+
+.heatmap-cell[data-level="2"] {
+  background: rgba(217, 119, 87, 0.42);
+  border: 1px solid rgba(217, 119, 87, 0.30);
+}
+
+.heatmap-cell[data-level="3"] {
+  background: rgba(217, 119, 87, 0.68);
+  border: 1px solid rgba(217, 119, 87, 0.50);
+}
+
+.heatmap-cell[data-level="4"] {
+  background: var(--accent);
+  border: 1px solid var(--accent-hover);
+}
+
+/* Tooltip */
+.heatmap-tooltip {
+  position: absolute;
+  transform: translateX(-50%) translateY(-100%);
+  background: var(--bg-tooltip, #1a1a2e);
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 20;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-subtle);
+  animation: fadeIn 0.15s ease;
+}
+
+.heatmap-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--bg-tooltip, #1a1a2e);
+}
+
+/* Legend */
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 0.75rem;
+  justify-content: flex-end;
+}
+
+.heatmap-cell--legend {
+  cursor: default;
+  flex-shrink: 0;
+}
+
+.heatmap-cell--legend:hover {
+  transform: none;
+  opacity: 1;
+}
+
+.heatmap-legend-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+/* Skeleton loading state */
+.heatmap-skeleton {
+  height: 100px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    90deg,
+    var(--bg-elevated) 25%,
+    var(--border-subtle) 50%,
+    var(--bg-elevated) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 /* ===== PROFILE PAGE ===== */
 
 .profile-header {

@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import api from '../api/axios.js'
 import SnippetCard from '../components/SnippetCard.jsx'
+import ActivityHeatmap from '../components/ActivityHeatmap.jsx'
 
 const PROVIDER_LABELS = { google: 'Google', github: 'GitHub', local: 'Email' }
 
@@ -168,6 +169,9 @@ export default function Profile() {
           </div>
         </div>
       </div>
+
+      {/* Activity Heatmap */}
+      <ActivityHeatmap userId={id} />
 
       {/* Tabs (only own profile gets edit tabs) */}
       <div className='profile-tabs'>
