@@ -5,7 +5,7 @@ const AuthContext = createContext()
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(false) // don't block render on startup
+  const [loading, setLoading] = useState(true) // true until session check completes
 
   // On app mount: check for OAuth token in URL, then verify session in background
   useEffect(() => {
@@ -25,6 +25,8 @@ export const AuthProvider = ({ children }) => {
       } catch {
         // Token missing or expired — user is not logged in
         setUser(null)
+      } finally {
+        setLoading(false)
       }
     }
     checkSession()
