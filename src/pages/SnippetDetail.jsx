@@ -501,16 +501,7 @@ export default function SnippetDetail() {
           </>
         )}
 
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '1rem',
-            marginTop: '0.75rem',
-          }}
-        >
+        <div className="detail-actions-bar">
           <p className="detail-author">
             by{' '}
             <Link
@@ -521,7 +512,7 @@ export default function SnippetDetail() {
             </Link>
           </p>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div className="detail-action-buttons">
             {user && (user._id === snippet.author?._id || user._id === snippet.author) && (
               <>
                 <button
@@ -617,13 +608,12 @@ export default function SnippetDetail() {
                   onClick={handleBookmarkToggle}
                   disabled={bookmarkLoading}
                   title={isBookmarked ? 'Remove bookmark' : 'Bookmark this snippet'}
-                  style={{ marginLeft: 'auto' }}
                 >
                   <i
                     className={isBookmarked ? 'fa-solid fa-bookmark' : 'fa-regular fa-bookmark'}
                     style={{ marginRight: '0.35rem' }}
                   ></i>
-                  <span>{isBookmarked ? 'Bookmarked' : 'Bookmark'}</span>
+                  <span className="bookmark-text">{isBookmarked ? 'Bookmarked' : 'Bookmark'}</span>
                 </button>
               )}
               {!user && (

@@ -74,18 +74,22 @@ export default function Navbar() {
 
               <Link
                 to='/create'
-                className='btn btn-primary'
+                className='btn btn-primary nav-btn'
                 style={{ padding: '0.45rem 1rem', fontSize: '0.85rem' }}
               >
-                + New Snippet
+                <span className='btn-text'>+ New Snippet</span>
+                <span className='btn-icon'>+</span>
               </Link>
 
               <button
                 onClick={handleLogout}
-                className='btn btn-ghost'
+                className='btn btn-ghost nav-btn'
                 style={{ padding: '0.45rem 0.9rem', fontSize: '0.85rem' }}
+                title="Logout"
+                aria-label="Logout"
               >
-                Logout
+                <span className='btn-text'>Logout</span>
+                <i className='fa-solid fa-right-from-bracket btn-icon'></i>
               </button>
             </>
           ) : (

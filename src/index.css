@@ -106,6 +106,16 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+pre {
+  overflow-x: auto;
 }
 
 #root {

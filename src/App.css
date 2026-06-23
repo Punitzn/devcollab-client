@@ -139,7 +139,7 @@
 
 .snippets-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 1rem;
 }
 
@@ -251,6 +251,10 @@
 .card-author {
   font-size: 0.8rem;
   color: var(--text-muted);
+  max-width: 140px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
 }
 .card-author span {
   color: var(--accent);
@@ -395,6 +399,8 @@
   letter-spacing: -0.04em;
   margin-bottom: 0.5rem;
   color: var(--text-primary);
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .detail-desc {
@@ -529,6 +535,7 @@
   font-weight: 600;
   font-size: 0.875rem;
   color: var(--accent);
+  word-break: break-word;
 }
 
 .comment-line-badge {
@@ -840,11 +847,12 @@
   align-items: center;
   gap: 0.5rem;
   text-decoration: none;
-  padding: 0.3rem 0.6rem;
+  padding: 0.3rem 0.65rem;
   border-radius: var(--radius-full);
   border: 1px solid var(--border-subtle);
   background: var(--bg-elevated);
   transition: all 0.2s;
+  max-width: 180px;
 }
 
 .navbar-user-link:hover {
@@ -877,6 +885,9 @@
   font-size: 0.82rem;
   color: var(--text-secondary);
   font-weight: 500;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 /* ===== SNIPPET VOTE BUTTONS ===== */
@@ -1185,6 +1196,8 @@
   font-weight: 800;
   letter-spacing: -0.03em;
   margin-bottom: 0.4rem;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .profile-bio {
@@ -2100,11 +2113,150 @@
   box-shadow: 0 0 12px rgba(251, 191, 36, 0.2);
 }
 
-/* Responsive adjustment for small screens */
+/* Responsive adjustments and additions */
+@media (max-width: 768px) {
+  /* Navbar */
+  .navbar-username {
+    display: none;
+  }
+
+  /* Home Page Filters */
+  .filter-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE 10+ */
+    width: 100%;
+  }
+  .filter-row::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
+  }
+}
+
+@media (max-width: 640px) {
+  /* Navbar buttons */
+  .btn-text {
+    display: none;
+  }
+  
+  .nav-btn {
+    padding: 0.45rem 0.65rem !important;
+  }
+  
+  /* Profile header centering */
+  .profile-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1rem;
+  }
+  .profile-meta {
+    justify-content: center;
+  }
+  
+  /* Profile tabs horizontal scroll */
+  .profile-tabs {
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    width: 100%;
+    margin-bottom: 1.5rem;
+  }
+  .profile-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .profile-tab {
+    padding: 0.5rem 0.8rem;
+    float: none;
+    display: inline-block;
+  }
+
+  /* Command Palette on mobile */
+  .cmd-backdrop {
+    padding: 1rem;
+    align-items: flex-start;
+  }
+  .cmd-card {
+    max-height: calc(100vh - 2rem);
+  }
+  .cmd-list {
+    max-height: calc(100vh - 12rem);
+  }
+}
+
 @media (max-width: 480px) {
+  /* Notification Bell dropdown */
   .notif-dropdown {
-    width: 290px;
-    right: -60px;
+    position: fixed;
+    top: 60px;
+    left: 10px;
+    right: 10px;
+    width: auto;
+    max-width: calc(100vw - 20px);
+    z-index: 1001;
+  }
+}
+
+@media (max-width: 360px) {
+  .snippets-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+}
+
+/* Snippet Detail Action Bar Styles */
+.detail-actions-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detail-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .detail-actions-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .detail-action-buttons {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 580px) {
+  .detail-action-buttons {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  .detail-action-buttons .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .snippet-vote-row {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .bookmark-btn {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 420px) {
+  .bookmark-text {
+    display: none;
+  }
+  .bookmark-btn i {
+    margin-right: 0 !important;
   }
 }
 
