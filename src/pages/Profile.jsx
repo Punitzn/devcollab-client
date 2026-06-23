@@ -19,6 +19,8 @@ export default function Profile() {
   const [totalPages, setTotalPages] = useState(1)
   const [totalSnippets, setTotalSnippets] = useState(0)
   const [activeTab, setActiveTab] = useState('snippets') // 'snippets' | 'edit' | 'security'
+  const [bookmarkedSnippets, setBookmarkedSnippets] = useState([])
+  const [loadingBookmarks, setLoadingBookmarks] = useState(false)
 
   // Edit profile form
   const [editForm, setEditForm] = useState({ username: '', bio: '', avatar: '' })
@@ -75,6 +77,24 @@ export default function Profile() {
     }
     fetchProfile()
   }, [id, page])
+
+  useEffect(() => {
+    if (activeTab !== 'bookmarks') return
+
+    const fetchBookmarks = async () => {
+      setLoadingBookmarks(true)
+      try {
+        const { data } = await api.get('/users/bookmarks')
+        setBookmarkedSnippets(data || [])
+      } catch (err) {
+        console.error('Failed to fetch bookmarks:', err)
+      } finally {
+        setLoadingBookmarks(false)
+      }
+    }
+
+    fetchBookmarks()
+  }, [activeTab])
 
   const handleEditSubmit = async (e) => {
     e.preventDefault()
@@ -184,6 +204,12 @@ export default function Profile() {
         {isOwnProfile && (
           <>
             <button
+              className={`profile-tab${activeTab === 'bookmarks' ? ' active' : ''}`}
+              onClick={() => setActiveTab('bookmarks')}
+            >
+              Bookmarks ({currentUser?.bookmarks?.length || 0})
+            </button>
+            <button
               className={`profile-tab${activeTab === 'edit' ? ' active' : ''}`}
               onClick={() => setActiveTab('edit')}
             >
@@ -242,6 +268,33 @@ export default function Profile() {
                 </div>
               )}
             </>
+          )
+        )}
+
+        {/* Bookmarks Tab */}
+        {activeTab === 'bookmarks' && isOwnProfile && (
+          loadingBookmarks ? (
+            <div className='loading-container' style={{ padding: '2rem 0', textAlign: 'center' }}>
+              <div className='spinner' style={{ margin: '0 auto' }}></div>
+              <p style={{ marginTop: '0.5rem' }}>Loading bookmarks...</p>
+            </div>
+          ) : bookmarkedSnippets.length === 0 ? (
+            <div className='empty-state'>
+              <div className='empty-icon' style={{ marginBottom: '1rem' }}>
+                <i className='fa-regular fa-bookmark' style={{ fontSize: '2.5rem', color: 'var(--text-muted)' }}></i>
+              </div>
+              <h3>No bookmarks yet</h3>
+              <p>Explore snippets and bookmark them to save them here!</p>
+              <Link to='/' className='btn btn-primary' style={{ marginTop: '0.5rem' }}>
+                Browse Snippets
+              </Link>
+            </div>
+          ) : (
+            <div className='snippets-grid'>
+              {bookmarkedSnippets.map((s) => (
+                <SnippetCard key={s._id} snippet={s} />
+              ))}
+            </div>
           )
         )}
 

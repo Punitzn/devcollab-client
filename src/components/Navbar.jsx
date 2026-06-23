@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import NotificationBell from './NotificationBell.jsx'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
@@ -58,6 +59,7 @@ export default function Navbar() {
 
           {user ? (
             <>
+              <NotificationBell />
               {/* Clickable avatar/username → own profile */}
               <Link to={`/profile/${user._id}`} className='navbar-user-link'>
                 {user.avatar ? (

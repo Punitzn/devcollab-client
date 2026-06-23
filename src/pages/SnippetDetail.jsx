@@ -11,7 +11,7 @@ const LANGUAGES = ['javascript', 'python', 'cpp', 'java', 'typescript', 'go', 'r
 export default function SnippetDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, updateUser } = useAuth()
   const [snippet, setSnippet] = useState(null)
   const [comment, setComment] = useState('')
   const [loading, setLoading] = useState(true)
@@ -19,6 +19,7 @@ export default function SnippetDetail() {
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState('')
   const [voteLoading, setVoteLoading] = useState(false)
+  const [bookmarkLoading, setBookmarkLoading] = useState(false)
   const [aiReview, setAiReview] = useState(null)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
@@ -224,6 +225,19 @@ export default function SnippetDetail() {
     }
   }
 
+  const handleBookmarkToggle = async () => {
+    if (!user || bookmarkLoading) return
+    setBookmarkLoading(true)
+    try {
+      const { data } = await api.post(`/users/bookmarks/${id}`)
+      updateUser({ ...user, bookmarks: data.bookmarks })
+    } catch (err) {
+      console.error('Failed to toggle bookmark:', err)
+    } finally {
+      setBookmarkLoading(false)
+    }
+  }
+
   // Emit typing:stop and clear debounce timer
   const emitStop = useCallback(() => {
     if (typingRef.current && user?.username) {
@@ -424,6 +438,8 @@ export default function SnippetDetail() {
     user &&
     snippet.downvotes?.some((uid) => uid === user._id || uid?._id === user._id)
 
+  const isBookmarked = user && user.bookmarks?.includes(id)
+
   return (
     <div className="detail-page">
       <div className="detail-header">
@@ -606,6 +622,21 @@ export default function SnippetDetail() {
                 ></i>
                 <span>{snippet.downvotes?.length || 0}</span>
               </button>
+              {user && (
+                <button
+                  className={`vote-btn bookmark-btn${isBookmarked ? ' active' : ''}`}
+                  onClick={handleBookmarkToggle}
+                  disabled={bookmarkLoading}
+                  title={isBookmarked ? 'Remove bookmark' : 'Bookmark this snippet'}
+                  style={{ marginLeft: 'auto' }}
+                >
+                  <i
+                    className={isBookmarked ? 'fa-solid fa-bookmark' : 'fa-regular fa-bookmark'}
+                    style={{ marginRight: '0.35rem' }}
+                  ></i>
+                  <span>{isBookmarked ? 'Bookmarked' : 'Bookmark'}</span>
+                </button>
+              )}
               {!user && (
                 <span
                   style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}
