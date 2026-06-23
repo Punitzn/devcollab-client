@@ -59,31 +59,33 @@ export default function App() {
     <>
       <Navbar />
       <CommandPalette />
-      <Suspense fallback={<PageFallback />}>
-        <Routes>
-          {/* Public routes */}
-          <Route path='/' element={<RequireCompleteProfile><Home /></RequireCompleteProfile>} />
-          <Route path='/login' element={<Login />} />
-          <Route path='/register' element={<Register />} />
-          <Route path='/snippets/:id' element={<RequireCompleteProfile><SnippetDetail /></RequireCompleteProfile>} />
-          <Route path='/profile/:id' element={<RequireCompleteProfile><Profile /></RequireCompleteProfile>} />
+      <main>
+        <Suspense fallback={<PageFallback />}>
+          <Routes>
+            {/* Public routes */}
+            <Route path='/' element={<RequireCompleteProfile><Home /></RequireCompleteProfile>} />
+            <Route path='/login' element={<Login />} />
+            <Route path='/register' element={<Register />} />
+            <Route path='/snippets/:id' element={<RequireCompleteProfile><SnippetDetail /></RequireCompleteProfile>} />
+            <Route path='/profile/:id' element={<RequireCompleteProfile><Profile /></RequireCompleteProfile>} />
 
-          {/* OAuth profile completion (no navbar redirect loop) */}
-          <Route path='/complete-profile' element={<CompleteProfile />} />
+            {/* OAuth profile completion (no navbar redirect loop) */}
+            <Route path='/complete-profile' element={<CompleteProfile />} />
 
-          {/* Protected routes */}
-          <Route path='/create' element={
-            <RequireAuth>
-              <RequireCompleteProfile>
-                <CreateSnippet />
-              </RequireCompleteProfile>
-            </RequireAuth>
-          } />
+            {/* Protected routes */}
+            <Route path='/create' element={
+              <RequireAuth>
+                <RequireCompleteProfile>
+                  <CreateSnippet />
+                </RequireCompleteProfile>
+              </RequireAuth>
+            } />
 
-          {/* Catch-all */}
-          <Route path='*' element={<Navigate to='/' replace />} />
-        </Routes>
-      </Suspense>
+            {/* Catch-all */}
+            <Route path='*' element={<Navigate to='/' replace />} />
+          </Routes>
+        </Suspense>
+      </main>
     </>
   )
 }

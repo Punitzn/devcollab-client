@@ -235,7 +235,7 @@ export default function Profile() {
               <div className='empty-icon' style={{ marginBottom: '1rem' }}>
                 <i className='fa-regular fa-folder-open' style={{ fontSize: '2.5rem', color: 'var(--text-muted)' }}></i>
               </div>
-              <h3>No snippets yet</h3>
+              <h2>No snippets yet</h2>
               <p>{isOwnProfile ? 'Share your first code snippet!' : `${profile.username} hasn't posted any snippets yet.`}</p>
               {isOwnProfile && (
                 <Link to='/create' className='btn btn-primary' style={{ marginTop: '0.5rem' }}>
@@ -283,7 +283,7 @@ export default function Profile() {
               <div className='empty-icon' style={{ marginBottom: '1rem' }}>
                 <i className='fa-regular fa-bookmark' style={{ fontSize: '2.5rem', color: 'var(--text-muted)' }}></i>
               </div>
-              <h3>No bookmarks yet</h3>
+              <h2>No bookmarks yet</h2>
               <p>Explore snippets and bookmark them to save them here!</p>
               <Link to='/' className='btn btn-primary' style={{ marginTop: '0.5rem' }}>
                 Browse Snippets

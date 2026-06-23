@@ -19,6 +19,14 @@ export const AuthProvider = ({ children }) => {
         window.history.replaceState({}, '', window.location.pathname)
       }
 
+      const token = localStorage.getItem('token')
+      if (!token) {
+        // Silently mark as guest to avoid a failing HTTP call (prevents 401 console error)
+        setUser(null)
+        setLoading(false)
+        return
+      }
+
       try {
         const { data } = await api.get('/auth/me')
         setUser(data.user)

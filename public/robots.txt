@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://devcollab-client.vercel.app/sitemap.xml

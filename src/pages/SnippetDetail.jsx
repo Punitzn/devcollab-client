@@ -954,12 +954,12 @@ export default function SnippetDetail() {
 
       {/* ─── Comments Section ──────────────────────────────────── */}
       <div className="comments-section">
-        <h3 className="comments-title">
+        <h2 className="comments-title">
           Discussion
           <span className="comments-count">
             {snippet.comments?.length || 0}
           </span>
-        </h3>
+        </h2>
 
         {snippet.comments?.length === 0 && (
           <div

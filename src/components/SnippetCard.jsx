@@ -23,7 +23,7 @@ export default function SnippetCard({ snippet }) {
           </Link>
         </div>
 
-        <h3 className='card-title'>{snippet.title}</h3>
+        <h2 className='card-title'>{snippet.title}</h2>
 
         {snippet.description && (
           <p className='card-desc'>{snippet.description}</p>
