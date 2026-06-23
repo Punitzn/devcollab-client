@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import api from '../api/axios.js'
 import { isApiPointingAtFrontend } from '../api/config.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import Editor from '@monaco-editor/react'
+import { getSocket } from '../api/socket.js'
 
 const LANGUAGES = ['javascript', 'python', 'cpp', 'java', 'typescript', 'go', 'rust']
 
@@ -21,6 +22,11 @@ export default function SnippetDetail() {
   const [aiReview, setAiReview] = useState(null)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
+
+  // Real-time review presence
+  const [reviewers, setReviewers] = useState(new Set()) // usernames currently typing
+  const typingRef = useRef(false)       // are WE currently emitting typing?
+  const stopTimerRef = useRef(null)     // debounce timer for typing-stop
 
   const [codeVersions, setCodeVersions] = useState([])
   const [activeVersionIndex, setActiveVersionIndex] = useState(0)
@@ -102,6 +108,55 @@ export default function SnippetDetail() {
     fetchSnippet()
   }, [id])
 
+  // ── Socket.IO — join snippet room + listen for review events ────────────────
+  useEffect(() => {
+    if (!id) return
+    const socket = getSocket()
+
+    socket.emit('review:join', id)
+
+    const onTyping = ({ username }) => {
+      setReviewers((prev) => new Set([...prev, username]))
+    }
+
+    const onStop = ({ username }) => {
+      setReviewers((prev) => {
+        const next = new Set(prev)
+        next.delete(username)
+        return next
+      })
+    }
+
+    const onNew = ({ comment }) => {
+      // Skip if this is our own comment (we already appended it optimistically)
+      if (comment?.user?.username === user?.username) return
+      setSnippet((prev) => {
+        if (!prev) return prev
+        // Deduplicate by _id in case the REST response already set it
+        const exists = prev.comments?.some((c) => c._id === comment._id)
+        if (exists) return prev
+        return { ...prev, comments: [...(prev.comments || []), comment] }
+      })
+    }
+
+    socket.on('review:typing', onTyping)
+    socket.on('review:stop', onStop)
+    socket.on('review:new', onNew)
+
+    return () => {
+      socket.emit('review:leave', id)
+      // Tell others we stopped if we were mid-type
+      if (typingRef.current && user?.username) {
+        socket.emit('review:stop', { snippetId: id, username: user.username })
+        typingRef.current = false
+      }
+      if (stopTimerRef.current) clearTimeout(stopTimerRef.current)
+      socket.off('review:typing', onTyping)
+      socket.off('review:stop', onStop)
+      socket.off('review:new', onNew)
+    }
+  }, [id, user?.username])
+
   useEffect(() => {
     const onStarted = () => {
       setAiLoading(true)
@@ -169,11 +224,48 @@ export default function SnippetDetail() {
     }
   }
 
+  // Emit typing:stop and clear debounce timer
+  const emitStop = useCallback(() => {
+    if (typingRef.current && user?.username) {
+      getSocket().emit('review:stop', { snippetId: id, username: user.username })
+      typingRef.current = false
+    }
+    if (stopTimerRef.current) {
+      clearTimeout(stopTimerRef.current)
+      stopTimerRef.current = null
+    }
+  }, [id, user])
+
+  // Called on every comment textarea change
+  const handleCommentChange = useCallback((e) => {
+    const val = e.target.value
+    setComment(val)
+
+    if (!user?.username) return
+    const socket = getSocket()
+
+    if (val.trim()) {
+      // Emit typing if not already flagged
+      if (!typingRef.current) {
+        socket.emit('review:typing', { snippetId: id, username: user.username })
+        typingRef.current = true
+      }
+      // Reset the 3-second idle stop timer
+      if (stopTimerRef.current) clearTimeout(stopTimerRef.current)
+      stopTimerRef.current = setTimeout(emitStop, 3000)
+    } else {
+      // Textarea cleared — stop immediately
+      emitStop()
+    }
+  }, [id, user, emitStop])
+
   const handleComment = async (e) => {
     e.preventDefault()
     if (!comment.trim()) return
     setSubmitting(true)
     setError('')
+    // Stop typing indicator before submission
+    emitStop()
     try {
       const { data } = await api.post(`/snippets/${id}/comments`, {
         content: comment,
@@ -924,13 +1016,27 @@ export default function SnippetDetail() {
           </div>
         ))}
 
+        {/* Reviewer presence indicator */}
+        {reviewers.size > 0 && (
+          <div className="reviewer-indicator">
+            <span className="reviewer-dot" />
+            <span className="reviewer-text">
+              {[...reviewers].length === 1
+                ? `${[...reviewers][0]} is writing a review…`
+                : `${[...reviewers].slice(0, 2).join(' and ')}${
+                    reviewers.size > 2 ? ` +${reviewers.size - 2} more` : ''
+                  } are writing reviews…`}
+            </span>
+          </div>
+        )}
+
         {user ? (
           <form onSubmit={handleComment} className="comment-form">
             <input
               className="input"
               placeholder="Share your thoughts on this snippet..."
               value={comment}
-              onChange={(e) => setComment(e.target.value)}
+              onChange={handleCommentChange}
             />
             <button
               type="submit"
