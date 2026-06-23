@@ -45,7 +45,6 @@ export default function SnippetCard({ snippet }) {
             <i className='fa-regular fa-comment' style={{ marginRight: '0.35rem' }}></i>
             {snippet.comments?.length || 0}
           </span>
-          {/* Upvotes & Downvotes */}
           <span className='card-stat' style={{
             color: 'var(--success)',
             display: 'flex',
@@ -64,7 +63,6 @@ export default function SnippetCard({ snippet }) {
             <i className='fa-solid fa-chevron-down'></i>
             {snippet.downvotes?.length || 0}
           </span>
-          {/* AI reviewed badge */}
           {snippet.aiReview?.generatedAt && (
             <span className='card-stat' style={{ color: 'var(--accent)', marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
               <i className='fa-solid fa-robot'></i>

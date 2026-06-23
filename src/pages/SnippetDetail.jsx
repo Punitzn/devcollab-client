@@ -24,10 +24,9 @@ export default function SnippetDetail() {
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
 
-  // Real-time review presence
-  const [reviewers, setReviewers] = useState(new Set()) // usernames currently typing
-  const typingRef = useRef(false)       // are WE currently emitting typing?
-  const stopTimerRef = useRef(null)     // debounce timer for typing-stop
+  const [reviewers, setReviewers] = useState(new Set())
+  const typingRef = useRef(false)
+  const stopTimerRef = useRef(null)
 
   const [codeVersions, setCodeVersions] = useState([])
   const [activeVersionIndex, setActiveVersionIndex] = useState(0)
@@ -109,7 +108,6 @@ export default function SnippetDetail() {
     fetchSnippet()
   }, [id])
 
-  // ── Socket.IO — join snippet room + listen for review events ────────────────
   useEffect(() => {
     if (!id) return
     const socket = getSocket()
@@ -129,11 +127,9 @@ export default function SnippetDetail() {
     }
 
     const onNew = ({ comment }) => {
-      // Skip if this is our own comment (we already appended it optimistically)
       if (comment?.user?.username === user?.username) return
       setSnippet((prev) => {
         if (!prev) return prev
-        // Deduplicate by _id in case the REST response already set it
         const exists = prev.comments?.some((c) => c._id === comment._id)
         if (exists) return prev
         return { ...prev, comments: [...(prev.comments || []), comment] }
@@ -146,7 +142,6 @@ export default function SnippetDetail() {
 
     return () => {
       socket.emit('review:leave', id)
-      // Tell others we stopped if we were mid-type
       if (typingRef.current && user?.username) {
         socket.emit('review:stop', { snippetId: id, username: user.username })
         typingRef.current = false
@@ -238,7 +233,6 @@ export default function SnippetDetail() {
     }
   }
 
-  // Emit typing:stop and clear debounce timer
   const emitStop = useCallback(() => {
     if (typingRef.current && user?.username) {
       getSocket().emit('review:stop', { snippetId: id, username: user.username })
@@ -250,7 +244,6 @@ export default function SnippetDetail() {
     }
   }, [id, user])
 
-  // Called on every comment textarea change
   const handleCommentChange = useCallback((e) => {
     const val = e.target.value
     setComment(val)
@@ -259,16 +252,13 @@ export default function SnippetDetail() {
     const socket = getSocket()
 
     if (val.trim()) {
-      // Emit typing if not already flagged
       if (!typingRef.current) {
         socket.emit('review:typing', { snippetId: id, username: user.username })
         typingRef.current = true
       }
-      // Reset the 3-second idle stop timer
       if (stopTimerRef.current) clearTimeout(stopTimerRef.current)
       stopTimerRef.current = setTimeout(emitStop, 3000)
     } else {
-      // Textarea cleared — stop immediately
       emitStop()
     }
   }, [id, user, emitStop])
@@ -278,7 +268,6 @@ export default function SnippetDetail() {
     if (!comment.trim()) return
     setSubmitting(true)
     setError('')
-    // Stop typing indicator before submission
     emitStop()
     try {
       const { data } = await api.post(`/snippets/${id}/comments`, {
@@ -853,12 +842,10 @@ export default function SnippetDetail() {
 
         {!aiLoading && aiReview && (
           <div className="ai-review-body">
-            {/* Summary */}
             {aiReview.summary && (
               <p className="ai-review-summary">{aiReview.summary}</p>
             )}
 
-            {/* Complexity */}
             {aiReview.complexityRating && (
               <div className="ai-review-group">
                 <span
@@ -878,7 +865,6 @@ export default function SnippetDetail() {
               </div>
             )}
 
-            {/* Bugs */}
             <div className="ai-review-group">
               <span
                 className="ai-review-group-title"
@@ -915,7 +901,6 @@ export default function SnippetDetail() {
               )}
             </div>
 
-            {/* Suggestions */}
             {aiReview.suggestions?.length > 0 && (
               <div className="ai-review-group">
                 <span
@@ -952,7 +937,6 @@ export default function SnippetDetail() {
         )}
       </div>
 
-      {/* ─── Comments Section ──────────────────────────────────── */}
       <div className="comments-section">
         <h2 className="comments-title">
           Discussion
@@ -1047,7 +1031,6 @@ export default function SnippetDetail() {
           </div>
         ))}
 
-        {/* Reviewer presence indicator */}
         {reviewers.size > 0 && (
           <div className="reviewer-indicator">
             <span className="reviewer-dot" />

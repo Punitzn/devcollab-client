@@ -18,17 +18,15 @@ export default function Profile() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalSnippets, setTotalSnippets] = useState(0)
-  const [activeTab, setActiveTab] = useState('snippets') // 'snippets' | 'edit' | 'security'
+  const [activeTab, setActiveTab] = useState('snippets')
   const [bookmarkedSnippets, setBookmarkedSnippets] = useState([])
   const [loadingBookmarks, setLoadingBookmarks] = useState(false)
 
-  // Edit profile form
   const [editForm, setEditForm] = useState({ username: '', bio: '', avatar: '' })
   const [editLoading, setEditLoading] = useState(false)
   const [editError, setEditError] = useState('')
   const [editSuccess, setEditSuccess] = useState('')
 
-  // Set password form
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
   const [pwLoading, setPwLoading] = useState(false)
   const [pwError, setPwError] = useState('')
@@ -162,7 +160,6 @@ export default function Profile() {
 
   return (
     <div className='page-container' style={{ maxWidth: '900px' }}>
-      {/* Profile Header */}
       <div className='profile-header'>
         <div className='profile-avatar-wrap'>
           {profile.avatar ? (
@@ -190,10 +187,8 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Activity Heatmap */}
       <ActivityHeatmap userId={id} />
 
-      {/* Tabs (only own profile gets edit tabs) */}
       <div className='profile-tabs'>
         <button
           className={`profile-tab${activeTab === 'snippets' ? ' active' : ''}`}
@@ -225,10 +220,7 @@ export default function Profile() {
         )}
       </div>
 
-      {/* Tab Content */}
       <div className='profile-tab-content fade-in' key={activeTab}>
-
-        {/* Snippets Tab */}
         {activeTab === 'snippets' && (
           snippets.length === 0 ? (
             <div className='empty-state'>
@@ -271,7 +263,6 @@ export default function Profile() {
           )
         )}
 
-        {/* Bookmarks Tab */}
         {activeTab === 'bookmarks' && isOwnProfile && (
           loadingBookmarks ? (
             <div className='loading-container' style={{ padding: '2rem 0', textAlign: 'center' }}>
@@ -298,7 +289,6 @@ export default function Profile() {
           )
         )}
 
-        {/* Edit Profile Tab */}
         {activeTab === 'edit' && isOwnProfile && (
           <div className='profile-form-wrap'>
             <h2 style={{ marginBottom: '1.5rem', fontSize: '1.25rem' }}>Edit Profile</h2>
@@ -348,7 +338,6 @@ export default function Profile() {
           </div>
         )}
 
-        {/* Security Tab */}
         {activeTab === 'security' && isOwnProfile && (
           <div className='profile-form-wrap'>
             <h2 style={{ marginBottom: '0.5rem', fontSize: '1.25rem' }}>
@@ -370,7 +359,6 @@ export default function Profile() {
             )}
 
             <form onSubmit={handlePasswordSubmit} className='auth-form'>
-              {/* Only ask for current password if they already have one */}
               {currentUser?.password && (
                 <div className='form-group'>
                   <label className='form-label'>Current Password</label>
