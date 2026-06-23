@@ -368,6 +368,7 @@
 
 /* Snippet Detail */
 .detail-page {
+  width: 100%;
   max-width: 1000px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
@@ -623,6 +624,7 @@
 
 /* Create Snippet */
 .create-page {
+  width: 100%;
   max-width: 1300px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
